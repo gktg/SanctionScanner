@@ -41,14 +41,17 @@ namespace SanctionScanner
                 //We take the "Anasayfa Vitrin" as the "anasayfaVitrinList". We use HtmlAgilityPack for this.
                 IEnumerable<HtmlNode> anasayfaVitrinList = sahibindenDocument.DocumentNode.SelectNodes("//ul[@class='vitrin-list clearfix']//li//a");
 
+                //We create the product object.
+                Sahibinden urunModel = new Sahibinden();
+
+                decimal urunFiyatToplami = 0;
+
+
                 foreach (HtmlNode urun in anasayfaVitrinList)
                 {
 
-                    int milliseconds2 = 10000;
+                    int milliseconds2 = 5000;
                     Thread.Sleep(milliseconds2);
-
-                    //We create the product object.
-                    Sahibinden urunModel = new Sahibinden();
 
                     //We are assigning the profile url of the product.
                     string urunProfilUrl = url + urun.Attributes["href"].Value;
@@ -65,11 +68,12 @@ namespace SanctionScanner
 
 
                     //We are assigning the product object.
-                    urunModel.UrunAdi = urun.InnerText;
+                    urunModel.UrunAdi = urun.InnerText.Trim();
                     if (urunProfilFiyat != null)
                     {
-                        urunModel.UrunFiyati = urunProfilFiyat.InnerText;
-
+                        urunModel.UrunFiyati = urunProfilFiyat.InnerText.Trim();
+                        decimal urunFiyat = Convert.ToDecimal(urunModel.UrunFiyati.Replace(".", "").Replace("TL", ""));
+                        urunFiyatToplami += urunFiyat;
                     }
                     else
                     {
@@ -79,7 +83,7 @@ namespace SanctionScanner
                     urunList.Add(urunModel);
 
                 }
-
+                urunModel.UrunlerOrtalamFiyat = urunFiyatToplami / anasayfaVitrinList.Count();
 
 
 
@@ -123,6 +127,7 @@ namespace SanctionScanner
     {
         public string UrunAdi { get; set; }
         public string UrunFiyati { get; set; }
+        public decimal UrunlerOrtalamFiyat { get; set; }
         public string Url { get; set; }
     }
 }
