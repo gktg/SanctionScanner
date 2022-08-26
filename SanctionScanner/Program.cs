@@ -20,63 +20,71 @@ namespace SanctionScanner
 
             try
             {
-                int milliseconds = 3000;
-                Thread.Sleep(milliseconds);
-
+                int millisecondsForHomePage = 3000;
+                Thread.Sleep(millisecondsForHomePage);
 
                 string url = "https://www.sahibinden.com/";
 
                 List<Product> productList = new List<Product>();
 
-
-
-
                 using (WebClient client = new WebClient())
                 {
+                    //This two code blocks make our WebClient act like browser.
+                    string accept = "Accept: text / html, application / xhtml + xml, */*";
+                    string userAgent = "User-Agent: Mozilla/5.0 (compatible; MSIE 9.0; Windows NT 6.1; WOW64; Trident/5.0)";
+
                     HtmlDocument sahibindenDocument = new HtmlDocument();
 
                     //We make the webclient act like a browser to bypass the Sahibinden.com site, and we add headers for this.
-                    client.Headers.Add("Accept: text/html, application/xhtml+xml, */*");
-                    client.Headers.Add("User-Agent: Mozilla/5.0 (compatible; MSIE 9.0; Windows NT 6.1; WOW64; Trident/5.0)");
+                    client.Headers.Add(accept);
+                    client.Headers.Add(userAgent);
                     string html = client.DownloadString(url);
                     sahibindenDocument.LoadHtml(html);
 
                     //We take the "Anasayfa Vitrin" as the "homepageFeaturedAdsList". We use HtmlAgilityPack for this.
                     List<HtmlNode> homepageFeaturedAdsList = sahibindenDocument.DocumentNode.SelectNodes("//ul[@class='vitrin-list clearfix']//li//a").ToList();
 
+                    homepageFeaturedAdsList.RemoveRange(5, 50);
                     HomepageFeaturedAds homepageFeaturedAdsModel = new HomepageFeaturedAds();
 
                     decimal productsTotalPrice = 0;
 
 
-                    //foreach (HtmlNode urun in anasayfaVitrinList)
                     foreach (HtmlNode homepageFeaturedAds in homepageFeaturedAdsList)
                     {
                         //We create the product object.
                         Product productModel = new Product();
 
-                        int milliseconds2 = 5000;
-                        Thread.Sleep(milliseconds2);
+                        int millisecondsForProfile = 5000;
+                        Thread.Sleep(millisecondsForProfile);
 
                         //We are assigning the profile url of the product.
                         string productProfilUrl = url + homepageFeaturedAds.Attributes["href"].Value;
 
                         //We do the same thing we did for sahibinden.com in the product profile, and we get the html of the page.
-                        HtmlDocument urunProfilDocument = new HtmlDocument();
-                        client.Headers.Add("Accept: text/html, application/xhtml+xml, */*");
-                        client.Headers.Add("User-Agent: Mozilla/5.0 (compatible; MSIE 9.0; Windows NT 6.1; WOW64; Trident/5.0)");
+                        HtmlDocument productProfileDocument = new HtmlDocument();
+                        client.Headers.Add(accept);
+                        client.Headers.Add(userAgent);
                         string html2 = client.DownloadString(productProfilUrl);
-                        urunProfilDocument.LoadHtml(html2);
+                        productProfileDocument.LoadHtml(html2);
 
                         //We get the price of the product from the page.
-                        HtmlNode urunProfilFiyat = urunProfilDocument.DocumentNode.SelectSingleNode("//*[@id='classifiedDetail']/div/div[2]/div[2]/h3/text()");
+                        HtmlNode productPriceProfile = productProfileDocument.DocumentNode.SelectSingleNode("//*[@id='classifiedDetail']/div/div[2]/div[2]/h3/text()");
 
 
                         //We are assigning the product object.
-                        productModel.ProductName = homepageFeaturedAds.InnerText.Trim();
-                        if (urunProfilFiyat != null)
+                        if (homepageFeaturedAds.InnerText.Trim() == "")
                         {
-                            productModel.ProductPrice = urunProfilFiyat.InnerText.Trim();
+                            break;
+                        }
+                        else
+                        {
+                            productModel.ProductName = homepageFeaturedAds.InnerText.Trim();
+
+                        }
+                        if (productPriceProfile != null)
+                        {
+                            productModel.ProductPrice = productPriceProfile.InnerText.Trim();
                             decimal productPrice = Convert.ToDecimal(productModel.ProductPrice.Replace(".", "").Replace("TL", ""));
                             productsTotalPrice += productPrice;
                         }
@@ -90,7 +98,7 @@ namespace SanctionScanner
 
                     }
                     homepageFeaturedAdsModel.ProductList = productList;
-                    homepageFeaturedAdsModel.ProductsAveragePrice = productsTotalPrice / homepageFeaturedAdsList.Count();
+                    homepageFeaturedAdsModel.ProductsAveragePrice = (productsTotalPrice / homepageFeaturedAdsList.Count()).ToString("#,##0.00")+" TL";
 
 
 
@@ -129,19 +137,13 @@ namespace SanctionScanner
             }
 
 
-
-
-
-
-
-
         }
     }
 
     class HomepageFeaturedAds
     {
         public List<Product> ProductList { get; set; }
-        public decimal ProductsAveragePrice { get; set; }
+        public string ProductsAveragePrice { get; set; }
 
     }
 
