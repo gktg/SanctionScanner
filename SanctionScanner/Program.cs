@@ -17,15 +17,25 @@ namespace SanctionScanner
     {
         static void Main(string[] args)
         {
+            //We determine the path of the txt file to be written.
+            string fileName = @"C:\Users\goktu\Desktop\İlanlar.txt";
+
+            string writeText = "";
+
+            //We create txt file.
+            FileStream fs = new FileStream(fileName, FileMode.OpenOrCreate, FileAccess.Write);
+            fs.Close();
+
+            HomepageFeaturedAds homepageFeaturedAdsModel = new HomepageFeaturedAds();
+
+            decimal productsTotalPrice = 0;
+            int counter = 0;
 
             try
             {
-                int millisecondsForHomePage = 3000;
-                Thread.Sleep(millisecondsForHomePage);
 
                 string url = "https://www.sahibinden.com/";
 
-                List<Product> productList = new List<Product>();
 
                 using (WebClient client = new WebClient())
                 {
@@ -43,12 +53,6 @@ namespace SanctionScanner
 
                     //We take the "Anasayfa Vitrin" as the "homepageFeaturedAdsList". We use HtmlAgilityPack for this.
                     List<HtmlNode> homepageFeaturedAdsList = sahibindenDocument.DocumentNode.SelectNodes("//ul[@class='vitrin-list clearfix']//li//a").ToList();
-
-                    homepageFeaturedAdsList.RemoveRange(5, 50);
-                    HomepageFeaturedAds homepageFeaturedAdsModel = new HomepageFeaturedAds();
-
-                    decimal productsTotalPrice = 0;
-
 
                     foreach (HtmlNode homepageFeaturedAds in homepageFeaturedAdsList)
                     {
@@ -75,13 +79,15 @@ namespace SanctionScanner
                         //We are assigning the product object.
                         if (homepageFeaturedAds.InnerText.Trim() == "")
                         {
-                            break;
+                            continue;
                         }
                         else
                         {
                             productModel.ProductName = homepageFeaturedAds.InnerText.Trim();
 
                         }
+
+
                         if (productPriceProfile != null)
                         {
                             productModel.ProductPrice = productPriceProfile.InnerText.Trim();
@@ -90,47 +96,41 @@ namespace SanctionScanner
                         }
                         else
                         {
-                            productModel.ProductPrice = "";
+                            productModel.ProductPrice = "Belirtilmemiştir";
                         }
 
-                        productList.Add(productModel);
+
+                        Console.WriteLine($"{counter+1}- İlan Adı: {productModel.ProductName} ve İlan Fiyatı: {productModel.ProductPrice}\n");
+                        writeText = ($"{counter+1}- İlan Adı: {productModel.ProductName} ve İlan Fiyatı: {productModel.ProductPrice}\n");
+                        counter++;
+                        File.AppendAllText(fileName, writeText);
 
 
                     }
-                    homepageFeaturedAdsModel.ProductList = productList;
-                    homepageFeaturedAdsModel.ProductsAveragePrice = (productsTotalPrice / homepageFeaturedAdsList.Count()).ToString("#,##0.00")+" TL";
-
-
-
-
-                    //We determine the path of the txt file to be written.
-                    string fileName = @"C:\Users\goktu\Desktop\İlanlar.txt";
-
-                    string writeText = "";
-
-
-                    for (int x = 0; x < productList.Count(); x++)
-                    {
-                        Console.WriteLine($"{x + 1}- İlan Adı: {productList[x].ProductName} ve İlan Fiyatı: {productList[x].ProductPrice}\n");
-                        writeText += ($"{x + 1}- İlan Adı: {productList[x].ProductName} ve İlan Fiyatı: {productList[x].ProductPrice}\n");
-                    }
+                    homepageFeaturedAdsModel.ProductsAveragePrice = (productsTotalPrice / counter).ToString("#,##0.00") + " TL";
                     Console.WriteLine($"Anasayfa Vitrin Ortalama Fiyat: {homepageFeaturedAdsModel.ProductsAveragePrice}");
-                    writeText += $"Anasayfa Vitrin Ortalama Fiyat: {homepageFeaturedAdsModel.ProductsAveragePrice}";
 
-                    //We create txt file.
-                    FileStream fs = new FileStream(fileName, FileMode.OpenOrCreate, FileAccess.Write);
-                    fs.Close();
+                    writeText = $"Anasayfa Vitrin Ortalama Fiyat: {homepageFeaturedAdsModel.ProductsAveragePrice}\n";
                     File.AppendAllText(fileName, writeText);
-
-
-                    Console.ReadLine();
 
 
                 }
             }
             catch (WebException)
             {
+                if(productsTotalPrice != 0)
+                {
+                    var ProductsAveragePrice = (productsTotalPrice / counter).ToString("#,##0.00") + " TL";
+                    Console.WriteLine($"Anasayfa Vitrin Ortalama Fiyat: {ProductsAveragePrice}");
 
+                    writeText = $"Anasayfa Vitrin Ortalama Fiyat: {ProductsAveragePrice}\n";
+
+                }
+
+
+                writeText += "Sahibinden.com bağlantıyı engellemiş. Lütfen sonra tekrardan deneyiniz.";
+
+                File.AppendAllText(fileName, writeText);
                 Console.WriteLine("Sahibinden.com bağlantıyı engellemiş. Lütfen sonra tekrardan deneyiniz.");
                 Console.ReadLine();
 
@@ -140,19 +140,6 @@ namespace SanctionScanner
         }
     }
 
-    class HomepageFeaturedAds
-    {
-        public List<Product> ProductList { get; set; }
-        public string ProductsAveragePrice { get; set; }
-
-    }
-
-
-    class Product
-    {
-        public string ProductName { get; set; }
-        public string ProductPrice { get; set; }
-    }
 }
 
 
