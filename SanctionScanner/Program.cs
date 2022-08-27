@@ -73,7 +73,7 @@ namespace SanctionScanner
                         productProfileDocument.LoadHtml(html2);
 
                         //We get the price of the product from the page.
-                        HtmlNode productPriceProfile = productProfileDocument.DocumentNode.SelectSingleNode("//*[@id='classifiedDetail']/div/div[2]/div[2]/h3/text()");
+                        HtmlNode productProfilePrice = productProfileDocument.DocumentNode.SelectSingleNode("//*[@id='classifiedDetail']/div/div[2]/div[2]/h3/text()");
 
 
                         //We are assigning the product object.
@@ -88,29 +88,39 @@ namespace SanctionScanner
                         }
 
 
-                        if (productPriceProfile != null)
+                        if (productProfilePrice != null)
                         {
-                            productModel.ProductPrice = productPriceProfile.InnerText.Trim();
-                            decimal productPrice = Convert.ToDecimal(productModel.ProductPrice.Replace(".", "").Replace("TL", ""));
-                            productsTotalPrice += productPrice;
+                            string[] productPriceSplit = productProfilePrice.InnerText.Trim().Split();
+
+                            if (productPriceSplit[1] == "TL")
+                            {
+                                productModel.ProductPrice = productProfilePrice.InnerText.Trim();
+                                decimal productPrice = Convert.ToDecimal(productModel.ProductPrice.Replace(".", "").Replace("TL", ""));
+                                productsTotalPrice += productPrice;
+                            }
+                            else
+                            {
+                                continue;
+                            }
+
                         }
                         else
                         {
-                            productModel.ProductPrice = "Belirtilmemiştir";
+                            productModel.ProductPrice = "Not Specified";
                         }
 
 
-                        Console.WriteLine($"{counter+1}- İlan Adı: {productModel.ProductName} ve İlan Fiyatı: {productModel.ProductPrice}\n");
-                        writeText = ($"{counter+1}- İlan Adı: {productModel.ProductName} ve İlan Fiyatı: {productModel.ProductPrice}\n");
+                        Console.WriteLine($"{counter + 1}- Product Name: {productModel.ProductName} ve Product Price: {productModel.ProductPrice}\n");
+                        writeText = ($"{counter + 1}- Product Name: {productModel.ProductName} ve Product Price: {productModel.ProductPrice}\n");
                         counter++;
                         File.AppendAllText(fileName, writeText);
 
 
                     }
                     homepageFeaturedAdsModel.ProductsAveragePrice = (productsTotalPrice / counter).ToString("#,##0.00") + " TL";
-                    Console.WriteLine($"Anasayfa Vitrin Ortalama Fiyat: {homepageFeaturedAdsModel.ProductsAveragePrice}");
+                    Console.WriteLine($"Homepage Featured Ads Average Price: {homepageFeaturedAdsModel.ProductsAveragePrice}");
 
-                    writeText = $"Anasayfa Vitrin Ortalama Fiyat: {homepageFeaturedAdsModel.ProductsAveragePrice}\n";
+                    writeText = $"Homepage Featured Ads Average Price: {homepageFeaturedAdsModel.ProductsAveragePrice}\n";
                     File.AppendAllText(fileName, writeText);
 
 
@@ -118,20 +128,20 @@ namespace SanctionScanner
             }
             catch (WebException)
             {
-                if(productsTotalPrice != 0)
+                if (productsTotalPrice != 0)
                 {
                     var ProductsAveragePrice = (productsTotalPrice / counter).ToString("#,##0.00") + " TL";
-                    Console.WriteLine($"Anasayfa Vitrin Ortalama Fiyat: {ProductsAveragePrice}");
+                    Console.WriteLine($"Homepage Featured Ads Average Price: {ProductsAveragePrice}");
 
-                    writeText = $"Anasayfa Vitrin Ortalama Fiyat: {ProductsAveragePrice}\n";
+                    writeText = $"Homepage Featured Ads Average Price: {ProductsAveragePrice}\n";
 
                 }
 
 
-                writeText += "Sahibinden.com bağlantıyı engellemiş. Lütfen sonra tekrardan deneyiniz.";
+                writeText += "sahibinden.com has blocked the connection. Please try again later.";
 
                 File.AppendAllText(fileName, writeText);
-                Console.WriteLine("Sahibinden.com bağlantıyı engellemiş. Lütfen sonra tekrardan deneyiniz.");
+                Console.WriteLine("sahibinden.com has blocked the connection. Please try again later");
                 Console.ReadLine();
 
             }
