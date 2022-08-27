@@ -11,7 +11,7 @@ namespace SanctionScanner
 {
     /// <summary>
     /// Author: Servet Göktuğ Türkan
-    /// Date: 25.08.2022
+    /// Date: 27.08.2022
     /// </summary>
     class Program
     {
